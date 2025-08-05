@@ -1,10 +1,11 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <WiFi.h>
-#include <Wire.h>
 #include <vector>
 #include <esp_wifi.h>
 
+#include "beacon.h"
+#include <esp_system.h>
 #include "types.h"
 #include "esp_wifi.h"
 #include "config.h"
@@ -13,29 +14,6 @@
 #include "definitions.h"
 
 int curr_channel = 1;
-
-const char* tabsMenu[] = { "Settings", "WiFi", "NFC", "IR"};
-const short tabsLength = sizeof(tabsMenu) / sizeof(tabsMenu[0]);
-short selectedItemTab = 0;
-
-const char* wifiMenu[] = { "Scan", "Connect", "Deauth", "Handshake", "Back"};
-const short wifiLength = sizeof(wifiMenu) / sizeof(wifiMenu[0]);
-short selectedItemWifi = 0;
-
-const char* nfcMenu[] = { "Test", "Back" };
-const short nfcLength = sizeof(nfcMenu) / sizeof(nfcMenu[0]);
-short selectedItemNfc = 0;
-
-const char* irMenu[] = { "Test", "Back"};
-const short irLength = sizeof(irMenu) / sizeof(irMenu[0]);
-short selectedItemIr = 0;
-
-const char* settingsMenu[] = { "Theme1", "Back"};
-const short settingsLength = sizeof(settingsMenu) / sizeof(settingsMenu[0]);
-short selectedItemSettings = 0;
-
-short currentTab = 0;
-
 int last_push_btn_time = 0;
 int time_to_sleep = 60000;
 
@@ -45,20 +23,13 @@ bool connect_menu = false;
 bool scan_menu = false;
 bool deauth_menu = false;
 bool handshake_menu = false;
+bool all_deauth_state = false;
+bool beacon_spam_state = false;
 
 String wifi;
 short wifiScroll = 0;
 
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-
-void checkSleep();
-void btnHandler();
-void drawMenu();
-void drawStatusBar();
-void get_wifi();
-
 
 void setup() {
   pinMode(BTN_UP_PIN, INPUT_PULLUP);
@@ -114,58 +85,7 @@ void loop() {
 
 void connectToWiFi() {
   String password = "";
-  short charIndex = 0;
-  const char* chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const short charsCount = strlen(chars);
-  bool entering = true;
-
-  while (entering) {
-    display.clearDisplay();
-    drawStatusBar();
-
-    display.setCursor(0, 10);
-    display.print("SSID: ");
-    display.println(wifi);
-
-    display.setCursor(0, 25);
-    display.print("Pass: ");
-    display.println(password + "_");
-
-    display.setCursor(0, 40);
-    if (charIndex < charsCount) {
-      display.print("Char: ");
-      display.print(chars[charIndex]);
-    } else if (charIndex == charsCount) {
-      display.print("<< [DELETE] >>");
-    } else {
-      display.print("<< [READY] >>");
-    }
-
-    display.display();
-
-    if (digitalRead(BTN_UP_PIN) == LOW) {
-      charIndex = (charIndex + 1) % (charsCount + 2);
-      delay(150);
-    }
-
-    if (digitalRead(BTN_DOWN_PIN) == LOW) {
-      charIndex = (charIndex - 1 + charsCount + 2) % (charsCount + 2);
-      delay(150);
-    }
-
-    if (digitalRead(BTN_SELECT_PIN) == LOW) {
-      if (charIndex < charsCount) {
-        password += chars[charIndex];
-      } else if (charIndex == charsCount) {
-        if (password.length() > 0) {
-          password.remove(password.length() - 1);
-        }
-      } else {
-        entering = false; 
-      }
-      delay(150);
-    }
-  }
+  start_input(&password);
 
   WiFi.begin(wifi.c_str(), password.c_str());
   unsigned long startAttemptTime = millis();
@@ -194,204 +114,6 @@ void connectToWiFi() {
   delay(2000);
 }
 
-void drawMenu() {
-  display.clearDisplay();
-  drawStatusBar();
-
-  const char** currentMenu;
-  short currentMenuLength;
-  short selectedItem;
-
-  switch (currentTab) {
-    case 0:
-      currentMenu = tabsMenu;
-      currentMenuLength = tabsLength;
-      selectedItem = selectedItemTab;
-      break;
-    case 1:
-      currentMenu = wifiMenu;
-      currentMenuLength = wifiLength;
-      selectedItem = selectedItemWifi;
-      break;
-    case 2:
-      currentMenu = nfcMenu;
-      currentMenuLength = nfcLength;
-      selectedItem = selectedItemNfc;
-      break;
-    case 3:
-      currentMenu = irMenu;
-      currentMenuLength = irLength;
-      selectedItem = selectedItemIr;
-      break;
-    case 4:
-      currentMenu = settingsMenu;
-      currentMenuLength = settingsLength;
-      selectedItem = selectedItemSettings;
-      break;
-  }
-
-  for (short i = 0; i < currentMenuLength; i++) {
-    String lineText;
-    if (i == selectedItem) {
-      lineText = "> " + String(currentMenu[i]) + " <";
-    } else {
-      lineText = "  " + String(currentMenu[i]) + "  ";
-    }
-
-    int x_pos = (SCREEN_WIDTH - (lineText.length() * 6)) / 2;
-    int y_pos = 10 + i * 10; 
-
-    display.setCursor(x_pos, y_pos);
-    display.print(lineText);
-  }
-
-  display.display();
-}
-
-
-void handleMenuSelect() {
-  switch (currentTab) {
-    case 0:
-      if (selectedItemTab == 0) {
-        currentTab = 4;
-      } else if (selectedItemTab == 1) {
-        currentTab = 1;
-      } else if (selectedItemTab == 2) {
-        currentTab = 2;
-      } else if (selectedItemTab == 3) {
-        currentTab = 3;
-      }
-      break;
-
-    case 1:
-      if (selectedItemWifi == wifiLength - 1) {
-        currentTab = 0;
-        selectedItemWifi = 0;
-      } else {
-        switch (selectedItemWifi) {
-          case 0:
-            display.clearDisplay();
-            display.setCursor(0, 0);
-            display.println("Scanning...");
-            display.display();
-
-            scan_menu = true;
-            get_wifi();
-            break;
-          case 1:
-            display.clearDisplay();
-            display.setCursor(0, 0);
-            display.println("Scanning connect...");
-            display.display();
-
-            connect_menu = true;
-            get_wifi();
-            break;
-          case 2:
-            display.clearDisplay();
-            display.setCursor(0, 0);
-            display.println("Scanning deauth...");
-            display.display();
-
-            deauth_menu = true;
-            get_wifi();
-            break;
-          case 3:
-            display.clearDisplay();
-            display.setCursor(0, 0);
-            display.println("Scanning handshake...");
-            display.display();
-
-            handshake_menu = true;
-            get_wifi();
-            break;
-        }
-      }
-      break;
-
-    case 2:
-      if (selectedItemNfc == nfcLength - 1) {
-        currentTab = 0;
-        selectedItemNfc = 0;
-      } else {
-        Serial.println("Checking NFC...");
-      }
-      break;
-
-    case 3:
-      if (selectedItemIr == irLength - 1) {
-        currentTab = 0;
-        selectedItemIr = 0;
-      } else {
-        Serial.println("IR Test started...");
-      }
-      break;
-
-    case 4:
-      if (selectedItemSettings == settingsLength - 1) {
-        currentTab = 0;
-        selectedItemSettings = 0;
-      } else {
-        Serial.print("Theme selected: ");
-        Serial.println(settingsMenu[selectedItemSettings]);
-      }
-      break;
-
-    default:
-      currentTab = 0;
-      break;
-  }
-}
-
-void btnHandler() {
-  short *selectedItemPtr = nullptr;
-  short currentMenuLength = 0;
-
-  switch (currentTab) {
-    case 0:
-      selectedItemPtr = &selectedItemTab;
-      currentMenuLength = tabsLength;
-      break;
-    case 1:
-      selectedItemPtr = &selectedItemWifi;
-      currentMenuLength = wifiLength;
-      break;
-    case 2:
-      selectedItemPtr = &selectedItemNfc;
-      currentMenuLength = nfcLength;
-      break;
-    case 3:
-      selectedItemPtr = &selectedItemIr;
-      currentMenuLength = irLength;
-      break;
-    case 4:
-      selectedItemPtr = &selectedItemSettings;
-      currentMenuLength = settingsLength;
-      break;
-  }
-    if (digitalRead(BTN_UP_PIN) == LOW) {
-      if (*selectedItemPtr > 0) {
-        (*selectedItemPtr)--;
-      } else {
-        *selectedItemPtr = currentMenuLength - 1;
-      }
-      delay(200);
-    }
-  
-    if (digitalRead(BTN_DOWN_PIN) == LOW) {
-      if (*selectedItemPtr < currentMenuLength - 1) {
-        (*selectedItemPtr)++;
-      } else {
-        *selectedItemPtr = 0;
-      }
-      delay(200);
-    }
-  
-    if (digitalRead(BTN_SELECT_PIN) == LOW) {
-      handleMenuSelect();
-      delay(200);
-    }
-}
 
 void checkSleep()
 {
@@ -419,6 +141,7 @@ void checkSleep()
   }
 }
 
+
 std::vector<std::pair<String, int>> scanWiFiNetworks() {
   std::vector<std::pair<String, int>> networks;
 
@@ -436,14 +159,36 @@ std::vector<std::pair<String, int>> scanWiFiNetworks() {
   return networks;
 }
 
+
 void wait_for_stop()
 {
   while (true)
   {
+    if (beacon_spam_state)
+    {
+      BeaconSpam();
+    }
+
     if (digitalRead(BTN_SELECT_PIN) == LOW) {
-      stop_deauth();
-      delay(200);
-      return;
+      if (beacon_spam_state)
+      {
+        beacon_spam_state = false;
+        delay(200);
+        return;
+      }
+
+      if (all_deauth_state)
+      {
+        ESP.restart();
+        all_deauth_state = false;
+        return;
+      }
+      else
+      {
+        stop_deauth();
+        delay(200);
+        return;
+      }
     }
 
     display.clearDisplay();
@@ -454,6 +199,7 @@ void wait_for_stop()
     display.display();
   }
 }
+
 
 void get_wifi() 
 {
@@ -535,18 +281,4 @@ void get_wifi()
 
     display.display();
   }
-}
-
-void drawStatusBar() {
-  display.setTextColor(SSD1306_WHITE, SSD1306_BLACK);
-  display.setCursor(0, 0);
-
-  if (wifi_connect_state) {
-    display.print("WI-FI: ");
-    display.print(wifi);
-  } else {
-    display.print("WI-FI: Not connected");
-  }
-
-  display.drawLine(0, 9, SCREEN_WIDTH - 1, 9, SSD1306_WHITE);
 }
