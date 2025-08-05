@@ -1,5 +1,4 @@
 #include <cstdint>
-#include "Arduino.h"
 #include "config.h"
 
 const uint8_t intro[] = {

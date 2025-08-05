@@ -3,12 +3,13 @@
 #include "beacon.h"
 #include "web_interface.h"
 #include "deauth.h"
+#include "flappy_bird.h"
 
-const char* tabsMenu[] = { "Settings", "WiFi", "Games", "IR"};
+const char* tabsMenu[] = { "Settings", "WiFi", "Games", "IR", "BLE Spam"};
 const short tabsLength = sizeof(tabsMenu) / sizeof(tabsMenu[0]);
 short selectedItemTab = 0;
 
-const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Handshake", "BeaconSpam", "Back"};
+const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Phishing", "BeaconSpam", "Back"};
 const short wifiLength = sizeof(wifiMenu) / sizeof(wifiMenu[0]);
 short selectedItemWifi = 0;
 short wifiMenuScroll = 0;
@@ -97,6 +98,13 @@ void handleMenuSelect() {
         currentTab = 2;
       } else if (selectedItemTab == 3) {
         currentTab = 3;
+      } else if (selectedItemTab == 4) {
+    
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.println("Start | BLE Spam...");
+      display.display();
+      wait_for_stop();
       }
       break;
 
@@ -119,7 +127,7 @@ void handleMenuSelect() {
           case 1:
             display.clearDisplay();
             display.setCursor(0, 0);
-            display.println("Scanning | Connect...");
+            display.println("Start | Connect...");
             display.display();
 
             connect_menu = true;
@@ -128,7 +136,7 @@ void handleMenuSelect() {
           case 2:
             display.clearDisplay();
             display.setCursor(0, 0);
-            display.println("Scanning | Deauth...");
+            display.println("Start | Deauth...");
             display.display();
 
             deauth_menu = true;
@@ -148,7 +156,7 @@ void handleMenuSelect() {
           case 4:
             display.clearDisplay();
             display.setCursor(0, 0);
-            display.println("Scanning | Handshake...");
+            display.println("Start | Phishing...");
             display.display();
 
             handshake_menu = true;
@@ -176,7 +184,7 @@ void handleMenuSelect() {
         currentTab = 0;
         selectedItemNfc = 0;
       } else {
-        Serial.println("Checking NFC...");
+        runFlappyBird();
       }
       break;
 
@@ -188,7 +196,6 @@ void handleMenuSelect() {
         Serial.println("IR Test started...");
       }
       break;
-
     case 4:
       if (selectedItemSettings == settingsLength - 1) {
         currentTab = 0;
