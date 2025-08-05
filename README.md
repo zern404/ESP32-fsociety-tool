@@ -11,7 +11,7 @@ This tool has been made for educational and testing purposes only. Any misuse or
 ## Building
 Clone this repo using:
 
-`git clone https://github.com/tesa-klebeband/ESP32-Deauther`
+`git clone https://github.com/zern404/ESP32-fsociety-tool`
 
 1) Install vscode and PlatformIO
 2) Install the PlatformIO extension in vscode
@@ -20,8 +20,23 @@ Clone this repo using:
 ## Installing directly from your Browser
 Open my [ESP32-Webflasher](https://tesa-klebeband.github.io/ESP32-Webflasher) in Chrome or Edge, select `ESP32-Deauther` and follow the listed instructions
 
-## Using ESP32-Deauther
-The ESP32 hosts a WiFi network with the name of `ESP32-Deauther` and a password of `esp32wroom32`. Connect to this network and type the IP of your ESP32 (typically **192.168.4.1**) into a webbrowser of a choice. You will see the following options:
+## Minimal Components
+
+* ESP-32 DEV/WROOM
+* SSD1306 display - default pins
+* 3 buttons, pin - up 18, select 23, down 19 
+
+## Using CUSTOM FIRMWARE
+
+* Connect to WI-FI for send data
+* Deauther
+* Receiving handshake
+* IR TV Killer
+* Games
+
+## Using ESP32-Deauther DEFAULT FIRMWARE
+
+The ESP32 hosts a WiFi network with the name of `DCP-LINK` and a password of `esp32wroom32`. Connect to this network and type the IP of your ESP32 (typically **192.168.4.1**) into a webbrowser of a choice. You will see the following options:
 * Rescan networks: Rescan and detect all WiFi networks in your area. After a successful scan, the networks are listed in the above table.
 * Launch Deauth-Attack: Deauthenticates all clients connected to a network. Enter the network number from the table at the top and a reason code from the table at the bottom of the page. After that click the button and your ESP32's LED will flash when it deauthenticates a station.
 * Deauth all networks: Launches a Deauth-Attack on all networks and stations with a specific reason. In order to stop this, you have to reset your ESP32 (no other way to code this since the ESP32 rapidly changes through all network channels and has to disable its AP)
