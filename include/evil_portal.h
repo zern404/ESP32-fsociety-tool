@@ -3,11 +3,14 @@
 
 extern bool portalRunning;
 extern bool isCaptured;
-extern String client_password;
-extern String client_ip;
+extern String capturedPassword;
 
-void startCaptivePortal(String* ssid);
+#define MAX_CLIENTS 4
+#define WIFI_CHANNEL 6
+#define DNS_INTERVAL 10
+
 void updateCaptivePortal();
 void stopCaptivePortal();
+void startCaptivePortal(String* ssid);
 
 #endif

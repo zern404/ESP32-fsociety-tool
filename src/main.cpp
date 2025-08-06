@@ -11,6 +11,7 @@
 #include "deauth.h"
 #include "definitions.h"
 #include "evil_portal.h"
+#include "ir_controll.h"
 
 int curr_channel = 1;
 int last_push_btn_time = 0;
@@ -34,7 +35,7 @@ void setup() {
   pinMode(BTN_UP_PIN, INPUT_PULLUP);
   pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
   pinMode(BTN_SELECT_PIN, INPUT_PULLUP);
-  pinMode(IR_PIN, OUTPUT);
+  irsend.begin();
   WiFi.disconnect();
   
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -65,18 +66,25 @@ void setup() {
 }
 
 void loop() {
-  if (deauth_type == DEAUTH_TYPE_ALL) {
+  if (deauth_type == DEAUTH_TYPE_ALL)
+  {
     if (curr_channel > CHANNEL_MAX) curr_channel = 1;
     esp_wifi_set_channel(curr_channel, WIFI_SECOND_CHAN_NONE);
     curr_channel++;
     delay(10);
-  } else {
+  } else
+  {
     if (portalRunning) {
       updateCaptivePortal();
     }
     else {
       web_interface_handle_client();
     }
+  }
+
+  if (irSpam)
+  {
+    irSpamAllProtocols();
   }
   
   checkSleep();
@@ -174,6 +182,13 @@ void wait_for_stop()
 
     if (digitalRead(BTN_SELECT_PIN) == LOW) {
       last_push_btn_time = 0;
+      
+      if (irSpam)
+      {
+        irSpam = false;
+        delay(200);
+        return;
+      }
 
       if (portalRunning)
       {
@@ -206,8 +221,8 @@ void wait_for_stop()
     if (isCaptured)
     {
       display.setCursor(0, 0);
-      display.println("IP: " + client_ip);
-      display.println("Password: " + client_password);
+      display.println("Succeful!");
+      display.println("Password: " + capturedPassword);
       display.println("-> SELECT to stop");
     }
     

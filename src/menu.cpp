@@ -4,12 +4,13 @@
 #include "web_interface.h"
 #include "deauth.h"
 #include "flappy_bird.h"
+#include "ir_controll.h"
 
 const char* tabsMenu[] = { "Settings", "WiFi", "Games", "IR", "BLE Spam"};
 const short tabsLength = sizeof(tabsMenu) / sizeof(tabsMenu[0]);
 short selectedItemTab = 0;
 
-const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Phishing", "BeaconSpam", "Back"};
+const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Fishing", "BeaconSpam", "Back"};
 const short wifiLength = sizeof(wifiMenu) / sizeof(wifiMenu[0]);
 short selectedItemWifi = 0;
 short wifiMenuScroll = 0;
@@ -156,7 +157,7 @@ void handleMenuSelect() {
           case 4:
             display.clearDisplay();
             display.setCursor(0, 0);
-            display.println("Start | Phishing...");
+            display.println("Start | Fishing...");
             display.display();
 
             handshake_menu = true;
@@ -193,7 +194,13 @@ void handleMenuSelect() {
         currentTab = 0;
         selectedItemIr = 0;
       } else {
-        Serial.println("IR Test started...");
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.println("Start | IrSpam...");
+        display.display();
+        delay(200);
+        irSpam = true;
+        wait_for_stop();
       }
       break;
     case 4:
