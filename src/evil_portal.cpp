@@ -55,6 +55,7 @@ const char index_email_pass_html[] PROGMEM = R"=====(
   <style>
     body { font-family: Arial, sans-serif; background-color: #f0f0f0; text-align: center; padding: 20px; }
     .login-form { background: white; max-width: 300px; margin: 0 auto; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input[type="email"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
     input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
     input[type="submit"] { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
     input[type="submit"]:hover { background-color: #45a049; }

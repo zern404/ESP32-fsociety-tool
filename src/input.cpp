@@ -2,6 +2,7 @@
 
 void start_input(String* password)
 {
+    *password = "";
     short charIndex = 0;
     const char* chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const short charsCount = strlen(chars);
