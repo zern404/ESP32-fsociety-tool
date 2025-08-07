@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"path": "D:/pythonchik/trade_bot"
+		},
+		{
+			"name": "f_society_esp32",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"vector": "cpp",
+			"array": "cpp",
+			"chrono": "cpp",
+			"deque": "cpp",
+			"forward_list": "cpp",
+			"initializer_list": "cpp",
+			"list": "cpp",
+			"regex": "cpp",
+			"xhash": "cpp",
+			"xstring": "cpp",
+			"xtree": "cpp",
+			"xutility": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"string_view": "cpp"
+		}
+	}
+}

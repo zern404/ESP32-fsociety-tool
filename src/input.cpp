@@ -13,7 +13,7 @@ void start_input(String* password)
 
         display.setCursor(0, 10);
 
-        display.print("Pass: ");
+        display.print("--> ");
         display.println(*password + "_");
 
         display.setCursor(0, 40);
