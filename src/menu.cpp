@@ -6,10 +6,18 @@
 #include "flappy_bird.h"
 #include "ir_controll.h"
 #include "evil_portal.h"
+#include "rfid_controll.h"
+#include "snake_game.h"  
 
-const char* tabsMenu[] = { "Settings", "WiFi", "Games", "IR"};
+const float targetScaleSelected = 1.4;  
+const float targetScaleOther = 1.0;      
+const float scaleSpeed = 0.30;          
+
+float itemScales[20];
+
+const char* tabsMenu[] = { "Settings", "WiFi", "Games", "Modules"};
 const short tabsLength = sizeof(tabsMenu) / sizeof(tabsMenu[0]);
-short selectedItemTab = 0;
+short selectedItemTab = 1;
 
 const char* wifiMenu[] = { "Scan", "Connect", "Deauth selected", "Deauth all", "Fishing Wi-Fi", "Fishing Email", "BeaconSpam", "Back"};
 const short wifiLength = sizeof(wifiMenu) / sizeof(wifiMenu[0]);
@@ -17,79 +25,90 @@ short selectedItemWifi = 0;
 short wifiMenuScroll = 0;
 const short wifiMenuVisible = 4; 
 
-const char* nfcMenu[] = { "Flappy Bird", "Back" };
+const char* nfcMenu[] = { "Flappy Bird", "Snake", "Back" };
 const short nfcLength = sizeof(nfcMenu) / sizeof(nfcMenu[0]);
+short nfcMenuScroll = 0;
 short selectedItemNfc = 0;
 
-const char* irMenu[] = { "Start", "Back"};
+const char* irMenu[] = { "IR Killer", "RFID Read/Write", "RFID Default", "RM Read/Send", "RM Default", "Back"};
 const short irLength = sizeof(irMenu) / sizeof(irMenu[0]);
+short irMenuScroll = 0;
 short selectedItemIr = 0;
 
 const char* settingsMenu[] = { "Reboot", "Back"};
 const short settingsLength = sizeof(settingsMenu) / sizeof(settingsMenu[0]);
+short settingsMenuScroll = 0;
 short selectedItemSettings = 0;
 
 short currentTab = 0;
 
 String network_name = "";
 
+
 void drawMenu() {
-  display.clearDisplay();
-  drawStatusBar();
+    display.clearDisplay();
+    drawStatusBar();
 
-  const char** currentMenu;
-  short currentMenuLength;
-  short selectedItem;
+    const char** currentMenu;
+    short currentMenuLength;
+    short selectedItem;
+    short menuScroll = 0;
+    const short menuVisible = 4;
 
-  switch (currentTab) {
-    case 0:
-      currentMenu = tabsMenu;
-      currentMenuLength = tabsLength;
-      selectedItem = selectedItemTab;
-      break;
-    case 1:
-      currentMenu = wifiMenu;
-      currentMenuLength = wifiLength;
-      selectedItem = selectedItemWifi;
-
-      if (selectedItemWifi < wifiMenuScroll) wifiMenuScroll = selectedItemWifi;
-      if (selectedItemWifi >= wifiMenuScroll + wifiMenuVisible) wifiMenuScroll = selectedItemWifi - wifiMenuVisible + 1;
-      break;
-    case 2:
-      currentMenu = nfcMenu;
-      currentMenuLength = nfcLength;
-      selectedItem = selectedItemNfc;
-      break;
-    case 3:
-      currentMenu = irMenu;
-      currentMenuLength = irLength;
-      selectedItem = selectedItemIr;
-      break;
-    case 4:
-      currentMenu = settingsMenu;
-      currentMenuLength = settingsLength;
-      selectedItem = selectedItemSettings;
-      break;
-  }
-
-  for (short i = 0; i < wifiMenuVisible; i++) {
-    short idx = wifiMenuScroll + i;
-    if (idx >= currentMenuLength) break;
-    String lineText;
-    if (idx == selectedItem) {
-      lineText = "> " + String(currentMenu[idx]) + " <";
-    } else {
-      lineText = "  " + String(currentMenu[idx]) + "  ";
+    switch(currentTab) {
+        case 0: currentMenu = tabsMenu; currentMenuLength = tabsLength; selectedItem = selectedItemTab; menuScroll = 0; break;
+        case 1: currentMenu = wifiMenu; currentMenuLength = wifiLength; selectedItem = selectedItemWifi;
+            if (selectedItemWifi < wifiMenuScroll) wifiMenuScroll = selectedItemWifi;
+            if (selectedItemWifi >= wifiMenuScroll + menuVisible) wifiMenuScroll = selectedItemWifi - menuVisible + 1;
+            menuScroll = wifiMenuScroll; break;
+        case 2: currentMenu = nfcMenu; currentMenuLength = nfcLength; selectedItem = selectedItemNfc;
+            if (selectedItemNfc < nfcMenuScroll) nfcMenuScroll = selectedItemNfc;
+            if (selectedItemNfc >= nfcMenuScroll + menuVisible) nfcMenuScroll = selectedItemNfc - menuVisible + 1;
+            menuScroll = nfcMenuScroll; break;
+        case 3: currentMenu = irMenu; currentMenuLength = irLength; selectedItem = selectedItemIr;
+            if (selectedItemIr < irMenuScroll) irMenuScroll = selectedItemIr;
+            if (selectedItemIr >= irMenuScroll + menuVisible) irMenuScroll = selectedItemIr - menuVisible + 1;
+            menuScroll = irMenuScroll; break;
+        case 4: currentMenu = settingsMenu; currentMenuLength = settingsLength; selectedItem = selectedItemSettings;
+            if (selectedItemSettings < settingsMenuScroll) settingsMenuScroll = selectedItemSettings;
+            if (selectedItemSettings >= settingsMenuScroll + menuVisible) settingsMenuScroll = selectedItemSettings - menuVisible + 1;
+            menuScroll = settingsMenuScroll; break;
     }
-    int x_pos = (SCREEN_WIDTH - (lineText.length() * 6)) / 2;
-    int y_pos = 10 + i * 10;
-    display.setCursor(x_pos, y_pos);
-    display.print(lineText);
-  }
 
-  display.display();
+    for (short i = 0; i < menuVisible; i++) {
+        short idx = menuScroll + i;
+        if (idx >= currentMenuLength) break;
+        float target = (idx == selectedItem) ? targetScaleSelected : targetScaleOther;
+        if (itemScales[idx] == 0) itemScales[idx] = targetScaleOther;
+        itemScales[idx] += (target - itemScales[idx]) * scaleSpeed;
+    }
+
+    float baseY = 10;
+    for (short i = 0; i < menuVisible; i++) {
+        short idx = menuScroll + i;
+        if (idx >= currentMenuLength) break;
+
+        float scale = itemScales[idx];
+        int textWidth = strlen(currentMenu[idx]) * 6 * scale;
+        int x_pos = (SCREEN_WIDTH - textWidth) / 2;
+
+        float y_pos = baseY + i * 12 + (12 * (1.0 - scale) / 2.0);
+
+        display.setTextSize(scale);
+        if (idx == selectedItem) {
+            display.fillRect(0, y_pos - 1, SCREEN_WIDTH, 12 * scale, SSD1306_WHITE);
+            display.setTextColor(SSD1306_BLACK);
+        } else {
+            display.setTextColor(SSD1306_WHITE);
+        }
+
+        display.setCursor(x_pos, y_pos);
+        display.print(currentMenu[idx]);
+    }
+
+    display.setTextSize(1);
+    display.display();
 }
-
 
 void handleMenuSelect() {
   switch (currentTab) {
@@ -192,28 +211,59 @@ void handleMenuSelect() {
       break;
 
     case 2:
-      if (selectedItemNfc == nfcLength - 1) {
-        currentTab = 0;
-        selectedItemNfc = 0;
-      } else {
+  if (selectedItemNfc == nfcLength - 1) {
+    currentTab = 0;
+    selectedItemNfc = 0;
+  } else {
+    switch (selectedItemNfc) {
+      case 0:
         runFlappyBird();
-      }
-      break;
+        break;
+      case 1:
+        startSnakeGame();
+        break;
+    }
+  }
+  break;
 
-    case 3:
-      if (selectedItemIr == irLength - 1) {
-        currentTab = 0;
-        selectedItemIr = 0;
-      } else {
-        display.clearDisplay();
-        display.setCursor(0, 0);
-        display.println("Start | IrSpam...");
-        display.display();
-        delay(200);
-        irSpam = true;
-        wait_for_stop();
+  case 3:
+    if (selectedItemIr == irLength - 1) {
+      currentTab = 0;
+      selectedItemIr = 0;
+    } else {
+      switch (selectedItemIr) {
+        case 0: 
+          display.clearDisplay();
+          display.setCursor(0, 0);
+          display.println("Start | IrSpam...");
+          display.display();
+          delay(200);
+          irSpam = true;
+          wait_for_stop();
+          break;
+
+        case 1:
+          display.clearDisplay();
+          display.setCursor(0, 0);
+          display.println("RFID Mode...");
+          display.display();
+          delay(200);
+          waitForCardAndHandle();   
+          break;
+
+        case 2: 
+          display.clearDisplay();
+          display.setCursor(0, 0);
+          display.println("Default UIDs:");
+          display.println("01:02:03:04");
+          display.println("AA:BB:CC:DD");
+          display.display();
+          delay(3000);
+          break;
       }
-      break;
+    }
+    break;
+    
     case 4:
       if (selectedItemSettings == settingsLength - 1) {
         currentTab = 0;
@@ -234,49 +284,27 @@ void btnHandler() {
   short currentMenuLength = 0;
 
   switch (currentTab) {
-    case 0:
-      selectedItemPtr = &selectedItemTab;
-      currentMenuLength = tabsLength;
-      break;
-    case 1:
-      selectedItemPtr = &selectedItemWifi;
-      currentMenuLength = wifiLength;
-      break;
-    case 2:
-      selectedItemPtr = &selectedItemNfc;
-      currentMenuLength = nfcLength;
-      break;
-    case 3:
-      selectedItemPtr = &selectedItemIr;
-      currentMenuLength = irLength;
-      break;
-    case 4:
-      selectedItemPtr = &selectedItemSettings;
-      currentMenuLength = settingsLength;
-      break;
+    case 0: selectedItemPtr = &selectedItemTab; currentMenuLength = tabsLength; break;
+    case 1: selectedItemPtr = &selectedItemWifi; currentMenuLength = wifiLength; break;
+    case 2: selectedItemPtr = &selectedItemNfc; currentMenuLength = nfcLength; break;
+    case 3: selectedItemPtr = &selectedItemIr; currentMenuLength = irLength; break;
+    case 4: selectedItemPtr = &selectedItemSettings; currentMenuLength = settingsLength; break;
   }
-    if (digitalRead(BTN_UP_PIN) == LOW) {
-      if (*selectedItemPtr > 0) {
-        (*selectedItemPtr)--;
-      } else {
-        *selectedItemPtr = currentMenuLength - 1;
-      }
-      delay(200);
-    }
-  
-    if (digitalRead(BTN_DOWN_PIN) == LOW) {
-      if (*selectedItemPtr < currentMenuLength - 1) {
-        (*selectedItemPtr)++;
-      } else {
-        *selectedItemPtr = 0;
-      }
-      delay(200);
-    }
-  
-    if (digitalRead(BTN_SELECT_PIN) == LOW) {
-      handleMenuSelect();
-      delay(200);
-    }
+
+  if (digitalRead(BTN_UP_PIN) == LOW) {
+    if (*selectedItemPtr > 0) (*selectedItemPtr)--; else *selectedItemPtr = currentMenuLength - 1;
+    delay(50); 
+  }
+
+  if (digitalRead(BTN_DOWN_PIN) == LOW) {
+    if (*selectedItemPtr < currentMenuLength - 1) (*selectedItemPtr)++; else *selectedItemPtr = 0;
+    delay(50);
+  }
+
+  if (digitalRead(BTN_SELECT_PIN) == LOW) {
+    handleMenuSelect();
+    delay(150);
+  }
 }
 
 void drawStatusBar() {

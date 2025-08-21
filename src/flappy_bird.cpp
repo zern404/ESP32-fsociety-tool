@@ -25,9 +25,9 @@ void fb_resetGame() {
   fb_currentSpeed = FB_PIPE_SPEED;
 
   for (int i = 0; i < FB_NUM_PIPES; i++) {
-    fb_pipeX[i] = SCREEN_WIDTH + i * (SCREEN_WIDTH / FB_NUM_PIPES);
-    fb_dynamicGap[i] = FB_GAP_HEIGHT;
-    fb_pipeGapY[i] = random(10, SCREEN_HEIGHT - fb_dynamicGap[i] - 10);
+    fb_pipeX[i] = SCREEN_WIDTH + i * (SCREEN_WIDTH / FB_NUM_PIPES) + random(0, 30); 
+    fb_dynamicGap[i] = random(25, FB_GAP_HEIGHT); 
+    fb_pipeGapY[i] = random(10, SCREEN_HEIGHT - fb_dynamicGap[i] - 10); 
   }
 }
 
@@ -45,20 +45,15 @@ void fb_updatePipes() {
     fb_pipeX[i] -= fb_currentSpeed;
 
     if (fb_pipeX[i] + FB_PIPE_WIDTH < 0) {
-      fb_pipeX[i] = SCREEN_WIDTH;
-      fb_score++;
+        fb_pipeX[i] = SCREEN_WIDTH;
+        fb_score++;
 
-      // Уменьшение размера прохода
-      int newGap = FB_GAP_HEIGHT - (fb_score / 5);
-      if (newGap < 20) newGap = 20;
-      fb_dynamicGap[i] = newGap;
+        fb_dynamicGap[i] = random(20, FB_GAP_HEIGHT);
+        fb_pipeGapY[i] = random(10, SCREEN_HEIGHT - fb_dynamicGap[i] - 10);
 
-      fb_pipeGapY[i] = random(10, SCREEN_HEIGHT - newGap - 10);
-
-      // Увеличение скорости
-      if (fb_score % 5 == 0 && fb_currentSpeed < 5.0) {
-        fb_currentSpeed += 0.3;
-      }
+        if (fb_score % 5 == 0 && fb_currentSpeed < 5.0) {
+            fb_currentSpeed += 0.3;
+        }
     }
   }
 }
