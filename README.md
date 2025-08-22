@@ -1,4 +1,4 @@
-# ESP32-Deauther
+# ESP32-Deauther-ULTIMATE
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/tesa-klebeband/ESP32-Deauther)
 ![GitHub License](https://img.shields.io/github/license/tesa-klebeband/ESP32-Deauther)
 ![GitHub Repo stars](https://img.shields.io/github/stars/tesa-klebeband/ESP32-Deauther?style=flat)
