@@ -7,7 +7,9 @@
 #include "ir_controll.h"
 #include "evil_portal.h"
 #include "rfid_controll.h"
-#include "snake_game.h"  
+#include "snake_game.h" 
+#include "controll_1101.h" 
+#include "ble_spam.h"
 
 const float targetScaleSelected = 1.4;  
 const float targetScaleOther = 1.0;      
@@ -15,7 +17,7 @@ const float scaleSpeed = 0.30;
 
 float itemScales[20];
 
-const char* tabsMenu[] = { "Settings", "WiFi", "Games", "Modules"};
+const char* tabsMenu[] = { "Settings", "WiFi", "Games", "Modules", "BLE"};
 const short tabsLength = sizeof(tabsMenu) / sizeof(tabsMenu[0]);
 short selectedItemTab = 1;
 
@@ -133,36 +135,44 @@ void handleMenuSelect() {
        switch (selectedItemWifi) {
         
           case 0:
+            delay(150);
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Scanning...");
+            display.drawBitmap(0, 11, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
 
             scan_menu = true;
             get_wifi();
             break;
           case 1:
+            delay(150);
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | Connect...");
+            display.drawBitmap(0, 11, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
 
             connect_menu = true;
             get_wifi();
             break;
           case 2:
+            delay(150);
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | Deauth...");
+            display.drawBitmap(0, 11, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
 
             deauth_menu = true;
             get_wifi();
             break;
           case 3:
-          display.clearDisplay();
+            delay(150);
+            display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | Deauth all...");
+            display.drawBitmap(0, 11, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
             server.stop();
             all_deauth_state = true;
@@ -171,20 +181,24 @@ void handleMenuSelect() {
             wait_for_stop();
             break;
           case 4:
+            delay(150);
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | Fishing...");
             display.println("Mode: Wi-Fi passwords");
+            display.drawBitmap(0, 16, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
 
             handshake_menu = true;
             get_wifi();
             break;
           case 5:
+            delay(150);
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | Fishing...");
             display.println("Mode: Email and passwords");
+            display.drawBitmap(0, 16, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
 
             server.stop();
@@ -195,9 +209,11 @@ void handleMenuSelect() {
             wait_for_stop();
             break;
           case 6:
+            delay(150);
             display.clearDisplay();
             display.setCursor(0, 0);
             display.println("Start | BeaconSpam...");
+            display.drawBitmap(0, 11, antenna_img, 64, 64, SSD1306_WHITE);
             display.display();
 
             delay(200);            
@@ -217,9 +233,11 @@ void handleMenuSelect() {
   } else {
     switch (selectedItemNfc) {
       case 0:
+        delay(150);
         runFlappyBird();
         break;
       case 1:
+        delay(150);
         startSnakeGame();
         break;
     }
@@ -233,6 +251,7 @@ void handleMenuSelect() {
     } else {
       switch (selectedItemIr) {
         case 0: 
+          delay(150);
           display.clearDisplay();
           display.setCursor(0, 0);
           display.println("Start | IrSpam...");
@@ -243,6 +262,7 @@ void handleMenuSelect() {
           break;
 
         case 1:
+          delay(150);
           display.clearDisplay();
           display.setCursor(0, 0);
           display.println("RFID Mode...");
@@ -252,13 +272,25 @@ void handleMenuSelect() {
           break;
 
         case 2: 
+          delay(500);
           display.clearDisplay();
           display.setCursor(0, 0);
           display.println("Default UIDs:");
           display.println("01:02:03:04");
           display.println("AA:BB:CC:DD");
           display.display();
-          delay(3000);
+          break;
+
+        case 3: 
+          delay(500);
+          display.clearDisplay();
+          cc1101_signal_capture();
+          break;
+
+        case 4: 
+          delay(500);
+          display.clearDisplay();
+          cc1101_popular_attacks();
           break;
       }
     }
@@ -312,10 +344,10 @@ void drawStatusBar() {
   display.setCursor(0, 0);
 
   if (wifi_connect_state) {
-    display.print("WI-FI: ");
+    display.print("->");
     display.print(wifi);
   } else {
-    display.print("WI-FI: Not connected");
+    display.print("Not connected");
   }
 
   display.drawLine(0, 9, SCREEN_WIDTH - 1, 9, SSD1306_WHITE);

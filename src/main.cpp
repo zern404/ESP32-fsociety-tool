@@ -13,6 +13,7 @@
 #include "evil_portal.h"
 #include "ir_controll.h"
 #include "rfid_controll.h"
+#include "ble_spam.h"
 
 
 int curr_channel = 1;
@@ -310,8 +311,7 @@ void wait_for_stop()
       display.setCursor(0, 0);
       display.println("ATTACK...");
       display.drawLine(0, 9, SCREEN_WIDTH - 1, 9, SSD1306_WHITE);
-      display.setCursor(0, 32);
-      display.println("-> SELECT to stop");
+      display.drawBitmap(0, 9, dead_image, 128, 64, SSD1306_WHITE);
     }
     display.display();
   }

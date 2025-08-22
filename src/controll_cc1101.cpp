@@ -66,7 +66,8 @@ TargetType chooseTarget() {
 }
 
 void cc1101_signal_capture() {
-    delay(200);
+    cc1101.begin();
+    
     TargetType target = chooseTarget();
 
     float freq = 433.0;
@@ -155,6 +156,8 @@ void cc1101_popular_attacks() {
 
         int progress = map(index + 1, 0, total, 0, SCREEN_WIDTH);
         display.fillRect(0, 50, progress, 10, SSD1306_WHITE);
+
+        display.drawBitmap(64, 9, antenna_img, 64, 64, SSD1306_WHITE);
         display.display();
 
         delay(500);

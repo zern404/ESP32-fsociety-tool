@@ -10,6 +10,7 @@ extern const uint8_t intro3[];
 extern const uint8_t intro4[];
 extern const uint8_t intro5[];
 extern const uint8_t intro6[];
+extern const uint8_t antenna_img[];
 extern const uint8_t dead_image[];
 
 extern bool display_power_state;
